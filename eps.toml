@@ -1,0 +1,56 @@
+[package]
+name        = "shopping"
+version     = "0.1.0"
+description = "Personal online shopping harness — search, compare, cart, and checkout with a plugin-first architecture."
+authors     = ["nickagliano"]
+license     = "MIT"
+repository  = "https://github.com/nickagliano/shopping"
+platforms   = ["aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu"]
+
+[eps]
+customization_guide = "CUSTOMIZE.md"
+hooks_dir           = "hooks/"
+
+[hooks]
+install   = "hooks/install.sh"
+configure = "hooks/configure.sh"
+
+[service]
+enabled = true
+start   = "./serve.sh"
+port    = 5555
+
+[ports]
+# ── Core ports — swap entire behaviors ────────────────────────────────────────
+
+# search_provider: where product searches are sent.
+# Default: plugins/search/amazon.js
+search_provider = "plugins/search/amazon.js"
+
+# cart_store: where cart state is persisted.
+# Default: plugins/cart/local_json.js (writes to ~/.shopping/cart.json)
+cart_store = "plugins/cart/local_json.js"
+
+# price_engine: how prices are fetched and compared across stores.
+# Default: plugins/price/single_store.js (mirrors search_provider prices)
+# Swap for plugins/price/multi_store.js to fan out across all search plugins
+price_engine = "plugins/price/single_store.js"
+
+# checkout_handler: what happens when the user confirms a purchase.
+# Default: plugins/checkout/open_in_browser.js
+checkout_handler = "plugins/checkout/open_in_browser.js"
+
+# notifier: how the user is alerted (price drops, deal alerts, order status).
+# Default: plugins/notify/stdout.js
+notifier = "plugins/notify/stdout.js"
+
+# ── Plugin directories — drop files in to extend ──────────────────────────────
+
+# search_plugins_dir: scanned for additional search providers (auto-discovered).
+search_plugins_dir = "plugins/search/"
+
+# deal_plugins_dir: scanned for coupon/deal scrapers (auto-discovered).
+deal_plugins_dir = "plugins/deals/"
+
+# review_plugins_dir: scanned for review aggregators (auto-discovered).
+review_plugins_dir = "plugins/reviews/"
