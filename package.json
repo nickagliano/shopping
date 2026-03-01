@@ -1,0 +1,14 @@
+{
+  "name": "shopping",
+  "version": "0.2.0",
+  "description": "Personal deal-watcher harness",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "leads": "node -e \"import('./leads.js').then(m => m.print())\""
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

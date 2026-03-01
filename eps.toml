@@ -1,7 +1,7 @@
 [package]
 name        = "shopping"
-version     = "0.1.0"
-description = "Personal online shopping harness — search, compare, cart, and checkout with a plugin-first architecture."
+version     = "0.2.0"
+description = "Personal deal-watcher harness — maintain a watchlist, poll marketplaces, get notified when leads appear."
 authors     = ["nickagliano"]
 license     = "MIT"
 repository  = "https://github.com/nickagliano/shopping"
@@ -21,36 +21,22 @@ start   = "./serve.sh"
 port    = 5555
 
 [ports]
-# ── Core ports — swap entire behaviors ────────────────────────────────────────
+# watchlist: path to the JSON file describing items you're hunting for.
+# Each entry has: name, keywords[], max_price (optional), notes (optional).
+watchlist = "watchlist.json"
 
-# search_provider: where product searches are sent.
-# Default: plugins/search/amazon.js
-search_provider = "plugins/search/amazon.js"
+# leads_store: where found leads are persisted between runs.
+leads_store = "leads.json"
 
-# cart_store: where cart state is persisted.
-# Default: plugins/cart/local_json.js (writes to ~/.shopping/cart.json)
-cart_store = "plugins/cart/local_json.js"
-
-# price_engine: how prices are fetched and compared across stores.
-# Default: plugins/price/single_store.js (mirrors search_provider prices)
-# Swap for plugins/price/multi_store.js to fan out across all search plugins
-price_engine = "plugins/price/single_store.js"
-
-# checkout_handler: what happens when the user confirms a purchase.
-# Default: plugins/checkout/open_in_browser.js
-checkout_handler = "plugins/checkout/open_in_browser.js"
-
-# notifier: how the user is alerted (price drops, deal alerts, order status).
-# Default: plugins/notify/stdout.js
+# notifier: how you're alerted when a good lead appears.
+# Default: plugins/notify/stdout.js (prints to terminal / logs)
+# Swap for: plugins/notify/macos_notification.js, slack.js, email.js
 notifier = "plugins/notify/stdout.js"
 
-# ── Plugin directories — drop files in to extend ──────────────────────────────
+# check_interval_minutes: how often to poll all marketplaces.
+# Default: 120 minutes (2 hours). Most marketplaces don't need more frequent checks.
+check_interval_minutes = 120
 
-# search_plugins_dir: scanned for additional search providers (auto-discovered).
-search_plugins_dir = "plugins/search/"
-
-# deal_plugins_dir: scanned for coupon/deal scrapers (auto-discovered).
-deal_plugins_dir = "plugins/deals/"
-
-# review_plugins_dir: scanned for review aggregators (auto-discovered).
-review_plugins_dir = "plugins/reviews/"
+# marketplaces_dir: directory scanned for marketplace plugins (auto-discovered).
+# Drop any file exporting { search(query, options) -> Lead[] } and it runs.
+marketplaces_dir = "plugins/marketplaces/"
