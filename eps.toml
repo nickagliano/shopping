@@ -16,9 +16,10 @@ install   = "hooks/install.sh"
 configure = "hooks/configure.sh"
 
 [service]
-enabled = true
-start   = "./serve.sh"
-port    = 5555
+enabled      = true
+start        = "./serve.sh"
+port         = 5555
+health_check = "GET /health"
 
 [ports]
 # watchlist: path to the JSON file describing items you're hunting for.

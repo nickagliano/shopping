@@ -31,8 +31,12 @@ Every authenticated response includes:
 
 ## Our Plugin's Approach
 
-`plugins/marketplaces/discogs.js` fetches up to 5 releases per watchlist item plus
-one `/releases/{id}` call per result — up to 6 requests per item per poll.
+`plugins/marketplaces/discogs.js` fetches up to 3 releases per watchlist item, then
+scrapes the sell/list page for each release to get listing IDs, then calls
+`/marketplace/listings/{id}` for up to 4 listings per release — up to ~13 API calls
+plus 3 web scrapes per watchlist item per poll.
+
+API calls are spaced 1100ms apart (~54 req/min, well under the 240 req/min limit).
 
 The plugin reads `X-Discogs-Ratelimit-Remaining` on every response. If it drops
 below 10, it pauses 60 seconds before continuing — long enough for the moving

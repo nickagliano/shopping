@@ -1,8 +1,8 @@
 {
-  "AMAZON_ACCESS_KEY": "",
-  "AMAZON_SECRET_KEY": "",
-  "AMAZON_PARTNER_TAG": "",
-  "EBAY_APP_ID": "",
+  "DISCOGS_TOKEN": "",
+  "EBAY_CLIENT_ID": "",
+  "EBAY_CLIENT_SECRET": "",
+  "CRAIGSLIST_CITIES": "sfbay,losangeles,seattle,portland,denver,chicago,newyork,boston,atlanta,dallas",
   "SLACK_WEBHOOK_URL": "",
   "SMTP_HOST": "",
   "SMTP_PORT": 587,

@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>shopping</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 14px;
+      background: #f5f5f5;
+      color: #111;
+      padding: 24px;
+    }
+
+    header {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+
+    #status {
+      font-size: 12px;
+      color: #666;
+    }
+
+    #poll-btn {
+      margin-left: auto;
+      padding: 6px 14px;
+      font-size: 13px;
+      background: #111;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    #poll-btn:disabled { opacity: 0.4; cursor: default; }
+
+    h2 {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #888;
+      margin-bottom: 10px;
+    }
+
+    .section { margin-bottom: 32px; }
+
+    /* ── Leads ── */
+
+    .leads-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+    }
+
+    /* Swipe-to-archive wrapper — clips the reveal action */
+    .swipe-wrapper {
+      position: relative;
+      overflow: hidden;
+      border-radius: 8px;
+    }
+
+    .archive-action {
+      position: absolute;
+      right: 0; top: 0; bottom: 0;
+      width: 80px;
+      background: #6b7280;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 0;
+    }
+    .archive-action:active { background: #4b5563; }
+
+    .lead-card {
+      background: #fff;
+      border: 1px solid #e5e5e5;
+      border-radius: 8px;
+      padding: 14px;
+      position: relative;
+      z-index: 1;
+      touch-action: pan-y; /* let browser scroll vertically; we handle horizontal */
+    }
+
+    .lead-card a {
+      text-decoration: none;
+      color: inherit;
+    }
+    .lead-card a:hover .lead-title { text-decoration: underline; }
+
+    .lead-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .source-badge {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 2px 6px;
+      border-radius: 4px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .source-discogs  { background: #f3e8ff; color: #7c3aed; }
+    .source-ebay     { background: #fff7e6; color: #b45309; }
+    .source-cannon   { background: #e6f4ff; color: #1d4ed8; }
+    .source-facebook { background: #e7f3ff; color: #1877f2; }
+    .source-default  { background: #f0f0f0; color: #555; }
+
+    .lead-title {
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1.4;
+    }
+
+    .lead-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .lead-price {
+      font-size: 16px;
+      font-weight: 700;
+      color: #111;
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+
+    .shipping-note {
+      font-size: 11px;
+      font-weight: 400;
+      color: #999;
+    }
+
+    .lead-footer {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+
+    .condition-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #f0fdf4;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
+    }
+
+    .ships-from {
+      font-size: 11px;
+      color: #888;
+    }
+
+    .lead-watchlist {
+      font-size: 11px;
+      color: #999;
+      margin-top: 4px;
+    }
+
+    /* ── Watchlist cards ── */
+
+    .watchlist-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 12px;
+    }
+
+    .watchlist-card {
+      background: #fff;
+      border: 1px solid #e5e5e5;
+      border-radius: 8px;
+      padding: 14px;
+      position: relative;
+      z-index: 1;
+      touch-action: pan-y;
+    }
+
+    .watchlist-card .wl-name {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .watchlist-card .wl-keywords {
+      font-size: 11px;
+      color: #888;
+    }
+
+    .watchlist-card .wl-notes {
+      font-size: 11px;
+      color: #aaa;
+      margin-top: 3px;
+      font-style: italic;
+    }
+
+    .wl-marketplaces {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 6px;
+    }
+    .wl-mp-badge {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #f0f0f0;
+      color: #555;
+    }
+
+    .mp-checkboxes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .mp-checkboxes label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+      color: #333;
+      cursor: pointer;
+    }
+    .mp-checkboxes input[type=checkbox] { cursor: pointer; }
+
+    .remove-action {
+      position: absolute;
+      right: 0; top: 0; bottom: 0;
+      width: 80px;
+      background: #ef4444;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 0;
+    }
+    .remove-action:active { background: #dc2626; }
+
+    .keywords { color: #666; font-size: 12px; }
+
+    .empty { color: #aaa; font-style: italic; padding: 20px 0; text-align: center; }
+
+    /* ── Watchlist section header + add form ── */
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .section-header h2 { margin-bottom: 0; }
+
+    .add-btn {
+      padding: 4px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      background: #fff;
+      color: #111;
+      border: 1px solid #d4d4d4;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .add-btn:hover { background: #f5f5f5; }
+
+    .add-form {
+      margin-top: 12px;
+      background: #fff;
+      border: 1px solid #e5e5e5;
+      border-radius: 8px;
+      padding: 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .add-form .full { grid-column: 1 / -1; }
+
+    .field label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #888;
+      margin-bottom: 5px;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 7px 10px;
+      font-size: 13px;
+      border: 1px solid #e5e5e5;
+      border-radius: 6px;
+      outline: none;
+      font-family: inherit;
+    }
+    .field input:focus { border-color: #111; }
+
+    .form-actions {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 2px;
+    }
+
+    .form-actions button {
+      padding: 7px 16px;
+      font-size: 13px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    #wl-cancel { background: #f5f5f5; color: #555; }
+    #wl-cancel:hover { background: #ebebeb; }
+    #wl-submit { background: #111; color: #fff; }
+    #wl-submit:hover { background: #333; }
+    #wl-submit:disabled { opacity: 0.4; cursor: default; }
+
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #111;
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+    }
+    #toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>shopping</h1>
+  <span id="status">loading…</span>
+  <button id="poll-btn">Poll now</button>
+</header>
+
+<div class="section">
+  <h2>Leads (<span id="lead-count">–</span>)</h2>
+  <div class="leads-grid" id="leads-grid"></div>
+</div>
+
+<div class="section">
+  <div class="section-header">
+    <h2>Watchlist (<span id="watchlist-count">–</span>)</h2>
+    <button class="add-btn" id="add-btn">+ Add</button>
+  </div>
+  <div class="watchlist-grid" id="watchlist-grid"></div>
+  <form class="add-form" id="add-form" style="display:none">
+    <div class="field full">
+      <label for="wl-name">Name</label>
+      <input id="wl-name" type="text" placeholder="e.g. Radiohead - OK Computer" required>
+    </div>
+    <div class="field full">
+      <label for="wl-keywords">Keywords <span style="font-weight:400;text-transform:none;letter-spacing:0">(comma-separated)</span></label>
+      <input id="wl-keywords" type="text" placeholder="e.g. radiohead, ok computer" required>
+    </div>
+    <div class="field full">
+      <label for="wl-notes">Notes</label>
+      <input id="wl-notes" type="text" placeholder="optional">
+    </div>
+    <div class="field full" id="wl-mp-field">
+      <label>Marketplaces</label>
+      <div class="mp-checkboxes" id="wl-marketplaces"></div>
+    </div>
+    <div class="form-actions">
+      <button type="button" id="wl-cancel">Cancel</button>
+      <button type="submit" id="wl-submit">Add to watchlist</button>
+    </div>
+  </form>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  // Escape user-supplied strings before inserting them into HTML
+  const esc = (s) => s == null ? '' : String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+  const sourceClass = (s) => {
+    const map = { discogs: 'source-discogs', ebay: 'source-ebay', cannon: 'source-cannon', facebook: 'source-facebook' };
+    return map[s] || 'source-default';
+  };
+
+  const fmt = (iso) => {
+    const d = new Date(iso);
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+      + ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  };
+
+  function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2500);
+  }
+
+  async function loadHealth() {
+    const h = await fetch('/health').then(r => r.json());
+    const el = document.getElementById('status');
+    el.textContent = h.lastPoll
+      ? `last poll ${fmt(h.lastPoll)} · ${h.plugins.length} plugin${h.plugins.length !== 1 ? 's' : ''}`
+      : `${h.plugins.length} plugin${h.plugins.length !== 1 ? 's' : ''} · never polled`;
+  }
+
+  async function loadLeads() {
+    const leads = await fetch('/leads').then(r => r.json());
+    const grid = document.getElementById('leads-grid');
+    document.getElementById('lead-count').textContent = leads.length;
+
+    if (!leads.length) {
+      grid.innerHTML = '<p class="empty">No leads yet — run a poll to find listings.</p>';
+      return;
+    }
+
+    // sort by price asc (use total = price + shipping when available)
+    const total = (l) => l.price + (l.shipping_price ?? 0);
+    leads.sort((a, b) => total(a) - total(b));
+
+    const condShort = (full) => {
+      if (!full) return null;
+      const m = full.match(/\(([^)]+)\)/);
+      if (!m) return full;
+      const s = m[1];
+      return s.startsWith('NM') ? 'NM' : s;
+    };
+
+    openWrapper = null;
+    swipe = null;
+
+    grid.innerHTML = leads.map(l => {
+      const cond = condShort(l.condition);
+      const shippingStr = l.shipping_price != null
+        ? `+$${l.shipping_price.toFixed(2)} ship`
+        : (l.source === 'discogs' ? '+ shipping TBD' : '');
+
+      return `
+      <div class="swipe-wrapper" data-source="${esc(l.source)}" data-url="${esc(l.url)}">
+        <button class="archive-action">Archive</button>
+        <div class="lead-card">
+          <a href="${esc(l.url)}" target="_blank" rel="noopener">
+            <div class="lead-header">
+              <span class="source-badge ${sourceClass(l.source)}">${esc(l.source)}</span>
+              <span class="lead-title">${esc(l.title)}</span>
+            </div>
+            <div class="lead-meta">
+              <span class="lead-price">
+                $${l.price.toFixed(2)}
+                ${shippingStr ? `<span class="shipping-note">${esc(shippingStr)}</span>` : ''}
+              </span>
+              <span>${fmt(l.found_at)}</span>
+            </div>
+          </a>
+          ${(cond || l.ships_from) ? `
+          <div class="lead-footer">
+            ${cond ? `<span class="condition-badge">${esc(cond)}</span>` : ''}
+            ${l.ships_from ? `<span class="ships-from">ships from ${esc(l.ships_from)}</span>` : ''}
+          </div>` : ''}
+          ${l.watchlist_item ? `<div class="lead-watchlist">↳ ${esc(l.watchlist_item)}</div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+
+    grid.querySelectorAll('.swipe-wrapper').forEach(w => initSwipeDelete(w));
+  }
+
+  async function loadWatchlist() {
+    const items = await fetch('/watchlist').then(r => r.json());
+    const grid  = document.getElementById('watchlist-grid');
+    document.getElementById('watchlist-count').textContent = items.length;
+
+    if (!items.length) {
+      grid.innerHTML = '<p class="empty">Watchlist is empty — add something above.</p>';
+      return;
+    }
+
+    grid.innerHTML = items.map(i => `
+      <div class="swipe-wrapper" data-name="${esc(i.name)}">
+        <button class="remove-action">Remove</button>
+        <div class="watchlist-card">
+          <div class="wl-name">${esc(i.name)}</div>
+          <div class="wl-keywords">${i.keywords.map(esc).join(', ')}</div>
+          ${i.notes ? `<div class="wl-notes">${esc(i.notes)}</div>` : ''}
+          ${i.marketplaces?.length ? `<div class="wl-marketplaces">${i.marketplaces.map(m => `<span class="wl-mp-badge">${esc(m)}</span>`).join('')}</div>` : ''}
+        </div>
+      </div>
+    `).join('');
+
+    grid.querySelectorAll('.swipe-wrapper').forEach(w =>
+      initSwipeDelete(w, '.watchlist-card', removeWatchlistItem)
+    );
+  }
+
+  async function removeWatchlistItem(wrapper) {
+    const res = await fetch('/watchlist', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: wrapper.dataset.name }),
+    });
+    if (!res.ok) { toast('Remove failed'); return; }
+    await loadWatchlist();
+  }
+
+  // ── Swipe-to-archive ──────────────────────────────────────────────────────
+
+  let openWrapper = null;
+  let swipe = null;       // { wrapper, card, x0, y0, started }
+  let justDragged = false;
+  const ARCHIVE_W = 80;
+
+  function closeOpen() {
+    if (!openWrapper) return;
+    const c = openWrapper.querySelector('.lead-card, .watchlist-card');
+    if (c) { c.style.transition = 'transform 0.2s ease'; c.style.transform = 'translateX(0)'; }
+    openWrapper = null;
+  }
+
+  // Single global handlers — only one swipe active at a time
+  document.addEventListener('mousemove', e => {
+    if (!swipe) return;
+    const dx = e.clientX - swipe.x0;
+    const dy = e.clientY - swipe.y0;
+    if (!swipe.started) {
+      if (Math.abs(dx) < 4 && Math.abs(dy) < 4) return;
+      if (Math.abs(dy) > Math.abs(dx)) { swipe = null; return; }
+      swipe.started = true;
+    }
+    e.preventDefault();
+    const base = openWrapper === swipe.wrapper ? -ARCHIVE_W : 0;
+    swipe.card.style.transition = 'none';
+    swipe.card.style.transform = `translateX(${Math.max(-ARCHIVE_W, Math.min(0, base + dx))}px)`;
+  }, { passive: false });
+
+  document.addEventListener('mouseup', e => {
+    if (!swipe) return;
+    const s = swipe; swipe = null;
+    if (!s.started) return;
+    justDragged = true; // suppress the click event that fires after mouseup
+    const dx = e.clientX - s.x0;
+    const base = openWrapper === s.wrapper ? -ARCHIVE_W : 0;
+    if (base + dx < -(ARCHIVE_W / 3)) {
+      s.card.style.transition = 'transform 0.2s ease';
+      s.card.style.transform = `translateX(-${ARCHIVE_W}px)`;
+      openWrapper = s.wrapper;
+    } else {
+      s.card.style.transition = 'transform 0.2s ease';
+      s.card.style.transform = 'translateX(0)';
+      if (openWrapper === s.wrapper) openWrapper = null;
+    }
+  });
+
+  document.addEventListener('click', e => {
+    if (justDragged) { justDragged = false; e.stopPropagation(); e.preventDefault(); return; }
+    if (openWrapper && !openWrapper.contains(e.target)) closeOpen();
+  }, true);
+
+  document.addEventListener('scroll', closeOpen, { passive: true });
+
+  function initSwipeDelete(wrapper, cardSel = '.lead-card', onAction = archiveLead) {
+    const card = wrapper.querySelector(cardSel);
+    const btn  = wrapper.querySelector('button');
+
+    // Mouse
+    card.addEventListener('mousedown', e => {
+      if (e.button !== 0) return;
+      if (openWrapper && openWrapper !== wrapper) { closeOpen(); return; }
+      swipe = { wrapper, card, x0: e.clientX, y0: e.clientY, started: false };
+    });
+
+    // Touch
+    let t = null;
+    card.addEventListener('touchstart', e => {
+      if (openWrapper && openWrapper !== wrapper) { closeOpen(); return; }
+      t = { x0: e.touches[0].clientX, y0: e.touches[0].clientY, started: false };
+    }, { passive: true });
+
+    card.addEventListener('touchmove', e => {
+      if (!t) return;
+      const dx = e.touches[0].clientX - t.x0;
+      const dy = e.touches[0].clientY - t.y0;
+      if (!t.started) {
+        if (Math.abs(dy) > Math.abs(dx)) { t = null; return; }
+        t.started = true;
+      }
+      const base = openWrapper === wrapper ? -ARCHIVE_W : 0;
+      card.style.transition = 'none';
+      card.style.transform = `translateX(${Math.max(-ARCHIVE_W, Math.min(0, base + dx))}px)`;
+    }, { passive: true });
+
+    card.addEventListener('touchend', e => {
+      if (!t || !t.started) { t = null; return; }
+      const dx = e.changedTouches[0].clientX - t.x0;
+      t = null;
+      const base = openWrapper === wrapper ? -ARCHIVE_W : 0;
+      if (base + dx < -(ARCHIVE_W / 3)) {
+        card.style.transition = 'transform 0.2s ease';
+        card.style.transform = `translateX(-${ARCHIVE_W}px)`;
+        openWrapper = wrapper;
+      } else {
+        card.style.transition = 'transform 0.2s ease';
+        card.style.transform = 'translateX(0)';
+        if (openWrapper === wrapper) openWrapper = null;
+      }
+    });
+
+    // Clicking an open card closes it instead of navigating
+    card.querySelector('a')?.addEventListener('click', e => {
+      if (openWrapper === wrapper) { e.preventDefault(); closeOpen(); }
+    });
+
+    btn.addEventListener('click', () => onAction(wrapper));
+  }
+
+  async function archiveLead(wrapper) {
+    const res = await fetch('/archive', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ source: wrapper.dataset.source, url: wrapper.dataset.url }),
+    });
+    if (!res.ok) { toast('Archive failed'); return; }
+    await loadLeads();
+  }
+
+  // ── Poll button ───────────────────────────────────────────────────────────
+
+  document.getElementById('poll-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('poll-btn');
+    btn.disabled = true;
+    btn.textContent = 'Polling…';
+    try {
+      const r = await fetch('/poll', { method: 'POST' });
+      const res = await r.json();
+      if (r.status === 429) {
+        toast(`Cooldown — try again in ${res.retryInSeconds}s`);
+      } else {
+        toast(res.newLeads > 0 ? `Found ${res.newLeads} new lead${res.newLeads !== 1 ? 's' : ''}!` : 'No new leads.');
+      }
+      await Promise.all([loadHealth(), loadLeads()]);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Poll now';
+    }
+  });
+
+  // ── Add watchlist item ────────────────────────────────────────────────────
+
+  const addForm = document.getElementById('add-form');
+  const addBtn  = document.getElementById('add-btn');
+
+  async function openAddForm() {
+    // Populate marketplace checkboxes from loaded plugins
+    const mpContainer = document.getElementById('wl-marketplaces');
+    if (!mpContainer.children.length) {
+      try {
+        const { plugins } = await fetch('/health').then(r => r.json());
+        mpContainer.innerHTML = plugins.map(p => `
+          <label><input type="checkbox" name="mp" value="${esc(p)}" checked> ${esc(p)}</label>
+        `).join('');
+      } catch { /* leave empty */ }
+    }
+    addForm.style.display = 'grid';
+    addBtn.textContent = 'Cancel';
+    document.getElementById('wl-name').focus();
+  }
+
+  function closeAddForm() {
+    addForm.style.display = 'none';
+    addBtn.textContent = '+ Add';
+    addForm.reset();
+  }
+
+  addBtn.addEventListener('click', () =>
+    addForm.style.display === 'none' ? openAddForm() : closeAddForm()
+  );
+
+  document.getElementById('wl-cancel').addEventListener('click', closeAddForm);
+
+  // Auto-populate keywords from name as a convenience default
+  document.getElementById('wl-name').addEventListener('input', e => {
+    const kw = document.getElementById('wl-keywords');
+    if (!kw.dataset.edited) kw.value = e.target.value.toLowerCase();
+  });
+  document.getElementById('wl-keywords').addEventListener('input', e => {
+    e.target.dataset.edited = e.target.value ? '1' : '';
+  });
+
+  addForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const submit = document.getElementById('wl-submit');
+    submit.disabled = true;
+    submit.textContent = 'Adding…';
+    try {
+      const keywords = document.getElementById('wl-keywords').value
+        .split(',').map(k => k.trim()).filter(Boolean);
+      const marketplaces = [...document.querySelectorAll('#wl-marketplaces input[type=checkbox]:checked')]
+        .map(cb => cb.value);
+      const res = await fetch('/watchlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name:         document.getElementById('wl-name').value.trim(),
+          keywords,
+          notes:        document.getElementById('wl-notes').value.trim() || null,
+          marketplaces,
+        }),
+      });
+      if (!res.ok) { toast((await res.json()).error ?? 'Failed'); return; }
+      closeAddForm();
+      await loadWatchlist();
+      toast('Added to watchlist');
+    } finally {
+      submit.disabled = false;
+      submit.textContent = 'Add to watchlist';
+    }
+  });
+
+  Promise.all([loadHealth(), loadLeads(), loadWatchlist()]);
+</script>
+</body>
+</html>

@@ -1,38 +1,47 @@
 /**
  * Marketplace plugin: Discogs
  *
- * Searches the Discogs database for vinyl releases matching the query, then
- * fetches each release to get its current marketplace stats (lowest price,
- * number of copies for sale). Surfaces any release that has copies available
- * within the max_price as a lead, with a direct link to its listings page.
+ * Pure API approach — no web scraping:
+ *   1. /database/search → up to DB_RESULTS matching release IDs  (1 API call)
+ *   2. /marketplace/stats/{release_id}?curr_abbr=USD             (1 API call per release)
+ *
+ * Total: 1 + DB_RESULTS API calls per watchlist item.
+ * Lead URL points to the sell/list page sorted by price (works fine in a real browser).
  *
  * Requires: DISCOGS_TOKEN env var (free at https://www.discogs.com/settings/developers)
  *
  * Interface: { search(query, options) -> Lead[] }
- *   options: { max_price? }
+ *
  */
 
-const BASE = "https://api.discogs.com";
+const BASE  = "https://api.discogs.com";
+const WEB   = "https://www.discogs.com";
 const TOKEN = process.env.DISCOGS_TOKEN;
-const USER_AGENT = "shopping-harness/0.2.0";
+const UA    = "shopping-harness/0.2.0 +local";
+
+const DB_RESULTS = 5;  // releases to check per query → 1 + 5 = 6 API calls per item
+
+// Discogs rate limit: 240 req/min authenticated (60-second moving window).
+// 1100ms between calls → ~54 req/min, well under the limit.
+const API_DELAY_MS = 1100;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function get(path, attempt = 1) {
+// ── Discogs API helper ────────────────────────────────────────────────────────
+
+async function apiGet(path, attempt = 1) {
   const sep = path.includes("?") ? "&" : "?";
   const res = await fetch(`${BASE}${path}${sep}token=${TOKEN}`, {
-    headers: { "User-Agent": USER_AGENT },
+    headers: { "User-Agent": UA },
   });
 
-  // On 429, wait for the 60-second moving average window to reset and retry once.
   if (res.status === 429) {
-    if (attempt >= 2) throw new Error(`Discogs API 429 (retry exhausted): ${path}`);
+    if (attempt >= 2) throw new Error(`Discogs 429 (retry exhausted): ${path}`);
     console.warn(`[discogs] Rate limited — pausing 60s then retrying`);
     await sleep(60_000);
-    return get(path, attempt + 1);
+    return apiGet(path, attempt + 1);
   }
 
-  // If remaining is low, pause before the *next* call so we don't 429 mid-poll.
   const remaining = parseInt(res.headers.get("X-Discogs-Ratelimit-Remaining") ?? "999", 10);
   if (remaining < 10) {
     console.warn(`[discogs] Rate limit low (${remaining} remaining) — pausing 60s`);
@@ -43,47 +52,66 @@ async function get(path, attempt = 1) {
   return res.json();
 }
 
-export async function search(query, options = {}) {
+// ── Plugin entry point ────────────────────────────────────────────────────────
+
+export async function search(query) {
   if (!TOKEN) {
     console.warn("[discogs] DISCOGS_TOKEN not set — skipping");
     return [];
   }
 
   // Step 1: find matching releases in the database
-  const { results } = await get(
-    `/database/search?q=${encodeURIComponent(query)}&type=release&format=vinyl&per_page=5`
-  );
+  let dbData;
+  try {
+    dbData = await apiGet(
+      `/database/search?q=${encodeURIComponent(query)}&type=release&format=vinyl&per_page=${DB_RESULTS}`
+    );
+  } catch (e) {
+    console.warn(`[discogs] DB search failed: ${e.message}`);
+    return [];
+  }
 
-  if (!results?.length) return [];
+  await sleep(API_DELAY_MS);
 
-  // Step 2: fetch each release to get live marketplace stats
+  const releases = dbData.results ?? [];
+  if (!releases.length) {
+    console.log(`[discogs] No releases found for "${query}"`);
+    return [];
+  }
+
   const leads = [];
-  for (const result of results) {
-    let release;
+
+  for (const release of releases) {
+    // Step 2: get marketplace stats for this release
+    let stats;
     try {
-      release = await get(`/releases/${result.id}`);
+      stats = await apiGet(`/marketplace/stats/${release.id}?curr_abbr=USD`);
+      await sleep(API_DELAY_MS);
     } catch (e) {
-      console.warn(`[discogs] Could not fetch release ${result.id}: ${e.message}`);
+      console.warn(`[discogs] Could not fetch stats for release ${release.id}: ${e.message}`);
       continue;
     }
 
-    const numForSale = release.num_for_sale ?? 0;
-    const lowestPrice = release.lowest_price ?? null;
+    if (stats.blocked_from_sale) continue;
+    if (!stats.num_for_sale) continue;
 
-    if (numForSale === 0 || lowestPrice === null) continue;
-    if (options.max_price && lowestPrice > options.max_price) continue;
+    const lowestPrice = stats.lowest_price?.value ?? null;
+    if (lowestPrice === null) continue;
 
     leads.push({
-      source: "discogs",
-      title: result.title,
-      price: lowestPrice,
-      currency: "USD",
-      num_for_sale: numForSale,
-      url: `https://www.discogs.com/sell/list?release_id=${result.id}`,
-      release_url: `https://www.discogs.com${result.uri}`,
-      year: result.year,
-      country: result.country,
-      found_at: new Date().toISOString(),
+      source:         "discogs",
+      title:          release.title,
+      price:          lowestPrice,
+      currency:       "USD",
+      shipping_price: null,   // not available from stats endpoint; shown as "TBD" in UI
+      condition:      null,
+      sleeve_condition: null,
+      ships_from:     null,
+      seller:         null,
+      seller_rating:  null,
+      num_for_sale:   stats.num_for_sale,
+      url:            `${WEB}/sell/list?release_id=${release.id}&sort=price%2Casc`,
+      found_at:       new Date().toISOString(),
     });
   }
 
