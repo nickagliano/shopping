@@ -1,3 +1,6 @@
 config/config.json
 leads.json
+watchlist.json
+archived.json
 node_modules/
+*.png
