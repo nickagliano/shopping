@@ -1,5 +1,0 @@
-[     762ms] SyntaxError: Failed to execute 'querySelector' on 'Element': '0' is not a valid selector.
-    at initSwipeDelete (http://localhost:5555/:566:26)
-    at NodeList.forEach (<anonymous>)
-    at loadLeads (http://localhost:5555/:471:45)
-    at async Promise.all (index 1)
