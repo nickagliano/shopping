@@ -4,3 +4,4 @@ watchlist.json
 archived.json
 node_modules/
 *.png
+.playwright-mcp/
