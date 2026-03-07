@@ -304,8 +304,9 @@ function startHttpServer(plugins, notifier) {
     sendJson(res, 404, { error: "Not found" });
   });
 
-  server.listen(PORT, () => {
-    console.log(`[shopping] HTTP server listening on port ${PORT}`);
+  const HOST = process.env.HOST || '127.0.0.1';
+  server.listen(PORT, HOST, () => {
+    console.log(`[shopping] HTTP server listening on ${HOST}:${PORT}`);
     console.log(`[shopping]   GET  /health    — liveness check`);
     console.log(`[shopping]   GET  /leads     — all stored leads`);
     console.log(`[shopping]   GET  /watchlist — current watchlist`);

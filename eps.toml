@@ -17,7 +17,7 @@ configure = "hooks/configure.sh"
 
 [service]
 enabled      = true
-start        = "./serve.sh"
+start        = "HOST=$(tailscale ip -4) ./serve.sh"
 port         = 5555
 health_check = "GET /health"
 
