@@ -1,6 +1,6 @@
 [package]
 name        = "shopping"
-version     = "0.2.0"
+version     = "0.2.1"
 description = "Personal deal-watcher harness — maintain a watchlist, poll marketplaces, get notified when leads appear."
 authors     = ["nickagliano"]
 license     = "MIT"
